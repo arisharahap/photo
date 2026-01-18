@@ -1,0 +1,31 @@
+{
+  "single_shot": {
+    "name": "Single Shot (1 Pose)",
+    "file": "frame_single.png",
+    "shots": 1,
+    "slots": [
+      {"x": 0, "y": 0, "width": 1200, "height": 1800}
+    ]
+  },
+  "strip_shot": {
+    "name": "Photostrip (3 Pose)",
+    "file": "frame_strip.png",
+    "shots": 3,
+    "slots": [
+      {"x": 50, "y": 50, "width": 1100, "height": 500},
+      {"x": 50, "y": 600, "width": 1100, "height": 500},
+      {"x": 50, "y": 1150, "width": 1100, "height": 500}
+    ]
+  },
+  "collage_shot": {
+    "name": "Kolase (4 Pose)",
+    "file": "frame_collage.png",
+    "shots": 4,
+    "slots": [
+      {"x": 50, "y": 50, "width": 525, "height": 825},
+      {"x": 625, "y": 50, "width": 525, "height": 825},
+      {"x": 50, "y": 925, "width": 525, "height": 825},
+      {"x": 625, "y": 925, "width": 525, "height": 825}
+    ]
+  }
+}
