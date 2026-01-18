@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilih Frame - Self Photo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+    <style>
+        :root { --neon-blue: #00f3ff; --neon-pink: #ff0055; --bg-dark: #0a0a0a; }
+        body {
+            margin: 0; background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 10% 20%, rgba(0, 243, 255, 0.1) 0%, transparent 20%), radial-gradient(circle at 90% 80%, rgba(255, 0, 85, 0.1) 0%, transparent 20%);
+            font-family: 'Poppins', sans-serif; color: white; height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; overflow: hidden;
+        }
+        .header { text-align: center; margin-bottom: 20px; z-index: 10; }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 5px; margin: 0; text-shadow: 0 0 20px var(--neon-blue); }
+        p { color: #aaa; margin-top: 5px; }
+
+        .swiper { width: 100%; height: 60vh; padding-top: 50px; padding-bottom: 50px; }
+        .swiper-slide {
+            width: 300px; height: 450px; border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            cursor: pointer; transition: 0.3s; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+        .slide-preview {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: contain; /* Pastikan gambar tidak terpotong */
+            padding: 15px;
+            box-sizing: border-box;
+            z-index: 1;
+            opacity: 1; /* Jangan transparan */
+            transition: 0.5s;
+            
+            /* TAMBAHAN: Beri background putih tipis agar frame transparan kelihatan */
+            background-color: rgba(255, 255, 255, 0.2); 
+            border-radius: 15px;
+        }
+
+        .swiper-slide-active .slide-preview {
+            /* Saat aktif, background lebih terang */
+            background-color: rgba(255, 255, 255, 0.8);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+        }
+        .slide-info { z-index: 2; background: linear-gradient(to top, black, transparent); width: 100%; padding: 20px; text-align: center; transform: translateY(100%); transition: 0.3s; }
+        .swiper-slide-active .slide-info { transform: translateY(0); }
+        .frame-name { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: var(--neon-blue); margin-bottom: 5px; }
+        .frame-detail { font-size: 0.9rem; color: #fff; }
+
+        .btn-select-wrapper { text-align: center; margin-top: 30px; height: 60px; }
+        .btn-select {
+            background: var(--neon-pink); color: white; padding: 15px 50px; font-size: 1.2rem;
+            border: none; border-radius: 50px; font-family: 'Orbitron', sans-serif; cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.5); transition: 0.3s; letter-spacing: 2px;
+            min-width: 300px; /* Lebar tetap agar teks tidak goyang */
+        }
+        .btn-select:hover { background: white; color: var(--neon-pink); box-shadow: 0 0 40px rgba(255, 0, 85, 1); }
+        .swiper-button-next, .swiper-button-prev { color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Pilih Gaya Foto</h1>
+        <p>Geser untuk melihat koleksi frame</p>
+    </div>
+
+    <div class="swiper mySwiper">
+        <div class="swiper-wrapper">
+            {% for key, frame in frames.items() %}
+            <div class="swiper-slide" data-key="{{ key }}" data-name="{{ frame.name }}" data-shots="{{ frame.shots }}">
+                <img src="{{ url_for('static', filename=frame.file) }}" class="slide-preview" alt="{{ frame.name }}">>
+                <div class="slide-info">
+                    <div class="frame-name">{{ frame.name }}</div>
+                    <div class="frame-detail">{{ frame.shots }}x Pose Otomatis</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-pagination"></div>
+    </div>
+
+    <div class="btn-select-wrapper">
+        <button class="btn-select" onclick="pilihFrame()">GESER UNTUK MEMILIH</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        let selectedKey = "";
+
+        var swiper = new Swiper(".mySwiper", {
+            effect: "coverflow",
+            grabCursor: true,
+            centeredSlides: true,
+            slidesPerView: "auto",
+            coverflowEffect: { rotate: 50, stretch: 0, depth: 100, modifier: 1, slideShadows: true },
+            pagination: { el: ".swiper-pagination", dynamicBullets: true },
+            navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+            // Event Listener yang Lebih Akurat
+            on: {
+                init: function() { updateButton(this); },
+                slideChange: function() { updateButton(this); }
+            }
+        });
+
+        function updateButton(swiperInstance) {
+            // Mengambil slide berdasarkan index aktif Swiper (Lebih presisi daripada class DOM)
+            const activeIndex = swiperInstance.activeIndex;
+            const activeSlide = swiperInstance.slides[activeIndex];
+            
+            if(activeSlide) {
+                selectedKey = activeSlide.getAttribute('data-key');
+                const name = activeSlide.getAttribute('data-name');
+                const shots = activeSlide.getAttribute('data-shots');
+                
+                // Ubah Teks Tombol agar User Yakin
+                const btn = document.querySelector('.btn-select');
+                btn.innerText = `PILIH: ${name} (${shots} POSE)`;
+                
+                // Animasi kecil biar sadar tombol berubah
+                btn.style.transform = "scale(1.05)";
+                setTimeout(() => btn.style.transform = "scale(1)", 150);
+            }
+        }
+
+        function pilihFrame() {
+            if(!selectedKey) {
+                alert("Silakan pilih frame terlebih dahulu!");
+                return;
+            }
+            const btn = document.querySelector('.btn-select');
+            btn.innerText = "MEMUAT...";
+            btn.style.transform = "scale(0.9)";
+            setTimeout(() => { window.location.href = "/camera?frame_key=" + selectedKey; }, 300);
+        }
+    </script>
+</body>
+</html>

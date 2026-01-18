@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selesai & Kirim</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/css/index.css">
+
+    <style>
+        body { 
+            margin: 0; background: #050505; color: white; 
+            font-family: 'Orbitron', sans-serif; 
+            display: flex; height: 100vh; overflow: hidden; 
+            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000 100%); 
+        }
+
+        /* KOLOM KIRI (PREVIEW FOTO) */
+        .left-col { 
+            flex: 2; display: flex; align-items: center; justify-content: center; 
+            border-right: 2px solid #333; 
+        }
+        .photo-frame { 
+            border: 10px solid white; 
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.3); 
+            max-height: 85vh; max-width: 90%; 
+            animation: popIn 0.5s ease-out;
+        }
+
+        /* KOLOM KANAN (INPUT EMAIL) */
+        .right-col { 
+            flex: 1; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
+            padding: 40px; text-align: center; position: relative; 
+        }
+        
+        h1 { font-size: 2rem; margin: 0; color: #00f3ff; text-transform: uppercase; }
+        p { color: #888; margin-bottom: 20px; font-size: 0.9rem; }
+        
+        /* KOTAK INPUT EMAIL */
+        .email-box { 
+            background: #111; padding: 20px; border-radius: 10px; 
+            border: 1px solid #333; width: 90%; 
+            display: flex; flex-direction: column; gap: 10px; 
+        }
+        
+        input { 
+            padding: 15px; background: #222; border: 1px solid #444; 
+            color: white; font-family: 'Orbitron', sans-serif; 
+            text-align: center; font-size: 1.1rem; outline: none; 
+        }
+        input:focus { border-color: #00f3ff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
+        
+        .btn-send { 
+            padding: 15px; background: #00f3ff; color: black; 
+            border: none; font-weight: bold; cursor: pointer; 
+            transition: 0.2s; font-family: 'Orbitron', sans-serif; 
+        }
+        .btn-send:hover { background: white; transform: scale(1.02); }
+        
+        /* TOMBOL KELUAR */
+        .btn-home { 
+            margin-top: 30px; color: #ff0055; text-decoration: none; 
+            border: 1px solid #ff0055; padding: 10px 30px; 
+            transition: 0.3s;
+        }
+        .btn-home:hover { background: #ff0055; color: white; }
+        
+        /* KEYBOARD CONTAINER (Muncul di bawah) */
+        .keyboard-container { 
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            background: #1a1a1a; color: black; display: none; z-index: 100; 
+            border-top: 2px solid #333;
+        }
+        
+        .print-status { margin-bottom: 20px; color: #00ff66; font-size: 0.8rem; letter-spacing: 1px; }
+
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="left-col">
+        <img src="/results/{{ filename }}" class="photo-frame">
+    </div>
+
+    <div class="right-col">
+        <div class="print-status" id="print-msg">SEDANG MENCETAK...</div>
+
+        <h1>Kirim ke Email</h1>
+        <p>Masukkan alamat email untuk menerima softfile.</p>
+
+        <div class="email-box">
+            <input type="email" id="user-email" class="input-email" placeholder="nama@email.com" onfocus="showKbd()">
+            <button class="btn-send" onclick="kirimEmail()">KIRIM SEKARANG</button>
+            <div id="status-kirim" style="font-size: 0.9rem; margin-top:5px;"></div>
+        </div>
+        
+        <a href="/" class="btn-home">SELESAI & KELUAR</a>
+
+        <div class="keyboard-container">
+            <div class="simple-keyboard"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/index.js"></script>
+    
+    <script>
+        const filename = "{{ filename }}";
+        
+        // 1. AUTO PRINT TRIGGER
+        // Langsung panggil backend untuk mencetak saat halaman terbuka
+        fetch('/print_now?file=' + filename);
+        
+        // Simulasi status print selesai setelah 3 detik
+        setTimeout(() => { 
+            document.getElementById('print-msg').innerText = "CETAK SELESAI!"; 
+        }, 3000);
+
+        // 2. SETUP KEYBOARD VIRTUAL
+        const Keyboard = window.SimpleKeyboard.default;
+        const myKeyboard = new Keyboard({
+            onChange: input => onChange(input),
+            onKeyPress: button => onKeyPress(button),
+            theme: "hg-theme-default hg-layout-default myTheme",
+            layout: {
+                'default': [
+                    '1 2 3 4 5 6 7 8 9 0',
+                    'q w e r t y u i o p',
+                    'a s d f g h j k l',
+                    '{shift} z x c v b n m @ . {bksp}',
+                    '{space} {enter}'
+                ]
+            }
+        });
+
+        // Saat tombol keyboard ditekan, update isi kotak input
+        function onChange(input) {
+            document.querySelector(".input-email").value = input;
+        }
+
+        // Saat tombol Enter ditekan, sembunyikan keyboard
+        function onKeyPress(button) {
+            if (button === "{enter}") hideKbd();
+        }
+
+        function showKbd() {
+            document.querySelector('.keyboard-container').style.display = 'block';
+        }
+
+        function hideKbd() {
+            document.querySelector('.keyboard-container').style.display = 'none';
+        }
+
+        // 3. FUNGSI KIRIM EMAIL
+        function kirimEmail() {
+            const email = document.getElementById('user-email').value;
+            const btn = document.querySelector('.btn-send');
+            const status = document.getElementById('status-kirim');
+
+            // Validasi sederhana
+            if(!email.includes('@') || !email.includes('.')) {
+                status.innerText = "Email tidak valid!";
+                status.style.color = "red";
+                return;
+            }
+
+            // Ubah tampilan tombol loading
+            btn.disabled = true;
+            btn.innerText = "MENGIRIM...";
+            status.innerText = "";
+
+            // Kirim data ke Python (app.py)
+            fetch('/send_email', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email: email, filename: filename })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    // Sukses
+                    btn.innerText = "TERKIRIM!";
+                    btn.style.background = "#00ff66";
+                    status.innerText = "Silakan cek inbox/spam email Anda.";
+                    status.style.color = "#00ff66";
+                    hideKbd();
+                } else {
+                    // Gagal dari server (misal password app salah)
+                    btn.innerText = "GAGAL, COBA LAGI";
+                    btn.disabled = false;
+                    status.innerText = "Error: " + data.message;
+                    status.style.color = "red";
+                }
+            })
+            .catch(err => {
+                // Gagal koneksi internet
+                btn.disabled = false;
+                btn.innerText = "KIRIM SEKARANG";
+                status.innerText = "Cek Koneksi Internet!";
+                status.style.color = "red";
+            });
+        }
+    </script>
+</body>
+</html>

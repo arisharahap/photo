@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start System - SelfBooth</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff0055;
+            --neon-green: #00ff66;
+            --bg-dark: #050505;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-dark);
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            font-family: 'Rajdhani', sans-serif;
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Container Utama dengan Bingkai Neon */
+        .cyber-card {
+            display: flex;
+            width: 90vw;
+            height: 85vh;
+            background: rgba(10, 10, 10, 0.8);
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2), inset 0 0 50px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        /* Hiasan Sudut (Corner Accents) */
+        .cyber-card::before {
+            content: ''; position: absolute; top: -2px; left: -2px;
+            width: 50px; height: 50px;
+            border-top: 5px solid var(--neon-pink); border-left: 5px solid var(--neon-pink);
+        }
+        .cyber-card::after {
+            content: ''; position: absolute; bottom: -2px; right: -2px;
+            width: 50px; height: 50px;
+            border-bottom: 5px solid var(--neon-pink); border-right: 5px solid var(--neon-pink);
+        }
+
+        /* PANEL KIRI */
+        .panel-left {
+            flex: 1;
+            padding: 40px;
+            border-right: 1px solid rgba(0, 243, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            margin: 0;
+            line-height: 1;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 15px;
+            background: var(--neon-green);
+            color: black;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+            width: fit-content;
+        }
+
+        /* Kontrol QTY */
+        .qty-control {
+            margin-top: 60px;
+        }
+        .label { font-size: 1.2rem; color: var(--neon-blue); letter-spacing: 2px; margin-bottom: 10px; }
+        
+        .btn-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .btn-cyber {
+            width: 70px; height: 70px;
+            background: transparent;
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            font-size: 2rem;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            transition: 0.2s;
+            clip-path: polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%);
+        }
+        .btn-cyber:hover { background: var(--neon-blue); color: black; box-shadow: 0 0 20px var(--neon-blue); }
+
+        .qty-num { font-size: 4rem; font-family: 'Orbitron', sans-serif; min-width: 80px; text-align: center; }
+
+        .price-box { margin-top: 40px; }
+        .total-price { font-size: 3rem; color: var(--neon-pink); text-shadow: 0 0 15px var(--neon-pink); font-family: 'Orbitron', sans-serif; }
+
+        /* PANEL KANAN */
+        .panel-right {
+            flex: 1;
+            padding: 40px;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 10px; margin-bottom: 30px; }
+        .tab-btn {
+            flex: 1; padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            color: #888;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            background: var(--neon-blue);
+            color: black;
+            box-shadow: 0 0 15px var(--neon-blue);
+            border: none;
+        }
+
+        /* Content Area */
+        .content { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed #333; }
+        .content.active { display: flex; }
+
+        #qr-img {
+            width: 250px; height: 250px;
+            border: 5px solid white;
+            padding: 10px; background: white;
+            box-shadow: 0 0 30px rgba(255,255,255,0.2);
+        }
+
+        .input-cyber {
+            width: 100%; padding: 20px;
+            background: transparent;
+            border: 2px solid #333;
+            border-left: 5px solid var(--neon-pink);
+            color: white; font-size: 1.5rem; font-family: 'Rajdhani', sans-serif;
+            margin-bottom: 20px; outline: none; text-transform: uppercase;
+        }
+        .input-cyber:focus { border-color: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); }
+
+        .btn-action {
+            width: 100%; padding: 20px;
+            background: var(--neon-pink);
+            color: white; border: none; font-size: 1.5rem; font-weight: bold; font-family: 'Orbitron', sans-serif;
+            cursor: pointer; clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
+            transition: 0.3s;
+        }
+        .btn-action:hover { letter-spacing: 2px; box-shadow: 0 0 20px var(--neon-pink); }
+
+        /* Dev Bypass */
+        .bypass { position: absolute; bottom: 10px; left: 10px; opacity: 0.3; font-size: 0.8rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="cyber-card">
+        <div class="panel-left">
+            <div class="status-badge">System Online</div>
+            <h1>Self Booth<br>Terminal</h1>
+            
+            <div class="qty-control">
+                <div class="label">JUMLAH CETAK (COPY)</div>
+                <div class="btn-group">
+                    <button class="btn-cyber" onclick="update(-1)">-</button>
+                    <div class="qty-num" id="qty">1</div>
+                    <button class="btn-cyber" onclick="update(1)">+</button>
+                </div>
+            </div>
+
+            <div class="price-box">
+                <div class="label">TOTAL BAYAR</div>
+                <div class="total-price" id="total">Rp 0</div>
+            </div>
+
+            <div class="bypass" onclick="location.href='/select_frame'">[DEV_MODE: BYPASS]</div>
+        </div>
+
+        <div class="panel-right">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('qr')">SCAN QRIS</button>
+                <button class="tab-btn" onclick="switchTab('vc')">VOUCHER</button>
+            </div>
+
+            <div id="view-qr" class="content active">
+                <img id="qr-img" src="" alt="QR Loading...">
+                <p style="margin-top: 20px; letter-spacing: 1px; color: var(--neon-blue);">SCAN UNTUK MEMULAI</p>
+            </div>
+
+            <div id="view-vc" class="content">
+                <input type="text" id="v-code" class="input-cyber" placeholder="MASUKKAN KODE">
+                <button class="btn-action" onclick="redeem()">PROSES KODE</button>
+                <p id="msg" style="margin-top: 15px; font-weight: bold; color: var(--neon-green);"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const price = {{ harga_satuan }};
+        let qty = 1;
+
+        function update(n) {
+            qty += n;
+            if(qty < 1) qty = 1;
+            if(qty > 5) qty = 5;
+            
+            document.getElementById('qty').innerText = qty;
+            document.getElementById('total').innerText = "Rp " + (qty * price).toLocaleString('id-ID');
+            loadQR();
+        }
+
+        function loadQR() {
+            fetch('/get_qrcode?qty='+qty).then(r=>r.json()).then(d=>{
+                document.getElementById('qr-img').src = d.qr_url;
+            });
+        }
+
+        function switchTab(mode) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            
+            if(mode === 'qr') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('view-qr').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('view-vc').classList.add('active');
+            }
+        }
+
+        function redeem() {
+            const code = document.getElementById('v-code').value;
+            fetch('/redeem_voucher', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({code, qty})
+            }).then(r=>r.json()).then(d=>{
+                const m = document.getElementById('msg');
+                if(d.status==='success') {
+                    m.style.color = "#00ff66"; m.innerText = "KODE DITERIMA. MENGALIHKAN...";
+                    setTimeout(()=> window.location.href='/select_frame', 1000);
+                } else {
+                    m.style.color = "#ff0055"; m.innerText = d.message;
+                }
+            });
+        }
+
+        update(0); // Init
+    </script>
+</body>
+</html>

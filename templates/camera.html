@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Session</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --hud: #00f3ff; --alert: #ff0055; }
+        body { margin: 0; background: black; height: 100vh; width: 100vw; overflow: hidden; font-family: 'Orbitron', sans-serif; position: relative; }
+        
+        /* VIDEO FULLSCREEN */
+        video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); z-index: 1; }
+        
+        /* HUD LAYER */
+        .hud-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; box-shadow: inset 0 0 100px rgba(0,0,0,0.8); }
+        .top-bar { position: absolute; top: 30px; left: 30px; right: 30px; display: flex; justify-content: space-between; }
+        .badge { background: rgba(0,0,0,0.6); color: var(--hud); padding: 10px 20px; border: 1px solid var(--hud); font-size: 1.5rem; text-shadow: 0 0 10px var(--hud); }
+        .timer-box { color: var(--alert); border-color: var(--alert); text-shadow: 0 0 10px var(--alert); }
+
+        /* COUNTDOWN & PREVIEW */
+        #big-countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20rem; color: white; display: none; text-shadow: 0 0 50px var(--hud); z-index: 20; }
+        #img-preview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: rgba(0,0,0,0.9); transform: scaleX(-1); display: none; z-index: 15; }
+
+        /* CONTROLS */
+        .controls { position: absolute; bottom: 50px; left: 0; width: 100%; display: flex; justify-content: center; gap: 30px; z-index: 30; pointer-events: auto; }
+        button { padding: 20px 50px; font-size: 1.5rem; font-family: 'Orbitron', sans-serif; border: none; cursor: pointer; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%); font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        button:hover { transform: scale(1.05); letter-spacing: 2px; }
+        .btn-snap { background: var(--hud); color: black; box-shadow: 0 0 30px var(--hud); }
+        .btn-retake { background: var(--alert); color: white; display: none; }
+        .btn-save { background: #00ff66; color: black; display: none; }
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+
+    <video id="vid" autoplay playsinline></video>
+
+    <div class="hud-overlay">
+        <div class="top-bar">
+            <div class="badge" id="pose-info">POSE 1</div>
+            <div class="badge timer-box" id="g-timer">05:00</div>
+        </div>
+    </div>
+    <div id="big-countdown">3</div>
+    <img id="img-preview" src="">
+    <canvas id="cvs"></canvas>
+    <div class="controls">
+        <button id="btn-snap" class="btn-snap" onclick="startCount()">AMBIL FOTO</button>
+        <button id="btn-retake" class="btn-retake" onclick="retake()">ULANGI</button>
+        <button id="btn-save" class="btn-save" onclick="save()">SIMPAN & LANJUT</button>
+    </div>
+
+    <script>
+        // Trik Menghilangkan Error Merah VS Code (String to Number)
+        const totalShots = Number("{{ frame_config.shots }}");
+        const fKey = "{{ frame_key }}";
+        
+        let currentPose = 1;
+        let photos = []; 
+        let tempImg = null;
+        let timeLeft = 300; 
+        let globalInterval = null;
+
+        // Init Kamera (Sekarang aman karena video sudah ada di atas)
+        const vid = document.getElementById('vid');
+        
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } })
+                .then(function(stream) {
+                    vid.srcObject = stream;
+                    vid.play();
+                })
+                .catch(function(err) {
+                    console.error("Error Camera:", err);
+                    alert("Gagal akses kamera: " + err.name);
+                });
+        } else {
+            alert("Browser tidak mendukung akses kamera!");
+        }
+
+        // Global Timer
+        globalInterval = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60), s = timeLeft%60;
+            const timerEl = document.getElementById('g-timer');
+            if(timerEl) timerEl.innerText = `${m}:${s<10?'0'+s:s}`;
+            if(timeLeft <= 0) finish(true);
+        }, 1000);
+
+        function startCount() {
+            document.querySelector('.controls').style.display = 'none';
+            document.getElementById('img-preview').style.display = 'none'; 
+            const cd = document.getElementById('big-countdown');
+            cd.style.display = 'block';
+            let c = 3; cd.innerText = c;
+            let i = setInterval(() => {
+                c--;
+                if(c > 0) { cd.innerText = c; } 
+                else { clearInterval(i); cd.style.display = 'none'; snap(); }
+            }, 1000);
+        }
+
+        function snap() {
+            document.body.style.backgroundColor = 'white';
+            setTimeout(() => document.body.style.backgroundColor = 'black', 100);
+            const cvs = document.getElementById('cvs');
+            cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
+            const ctx = cvs.getContext('2d');
+            ctx.translate(cvs.width, 0); ctx.scale(-1, 1);
+            ctx.drawImage(vid, 0, 0);
+            tempImg = cvs.toDataURL('image/jpeg');
+            const img = document.getElementById('img-preview');
+            img.src = tempImg; img.style.display = 'block';
+            document.querySelector('.controls').style.display = 'flex';
+            document.getElementById('btn-snap').style.display = 'none';
+            document.getElementById('btn-retake').style.display = 'block';
+            document.getElementById('btn-save').style.display = 'block';
+            document.getElementById('pose-info').innerText = "REVIEW FOTO";
+        }
+
+        function retake() {
+            tempImg = null; document.getElementById('img-preview').style.display = 'none'; startCount();
+        }
+
+        function save() {
+            photos.push(tempImg);
+            if(photos.length >= totalShots) { finish(false); } 
+            else {
+                currentPose++; tempImg = null;
+                document.getElementById('img-preview').style.display = 'none';
+                document.getElementById('pose-info').innerText = `POSE ${currentPose}`;
+                document.getElementById('btn-snap').style.display = 'block';
+                document.getElementById('btn-snap').innerText = "LANJUT POSE " + currentPose;
+                document.getElementById('btn-retake').style.display = 'none';
+                document.getElementById('btn-save').style.display = 'none';
+            }
+        }
+
+        function finish(forced) {
+            clearInterval(globalInterval);
+            document.querySelector('.controls').style.display = 'none';
+            document.getElementById('pose-info').innerText = "MEMPROSES...";
+            fetch('/process_photo', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({images: photos, frame_key: fKey})
+            }).then(r => r.json()).then(d => {
+                if(d.status === 'success') { window.location.href = "/result?file=" + d.filename; } 
+                else { alert("Error: " + d.message); }
+            });
+        }
+    </script>
+</body>
+</html>
